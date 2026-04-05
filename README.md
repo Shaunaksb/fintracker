@@ -41,36 +41,48 @@ A robust, secure, and performant backend built with **Django REST Framework (DRF
 ### 1. Prerequisites
 - Python 3.14+
 - PostgreSQL
-- [uv](https://github.com/astral-sh/uv) (recommended package manager, however you can use pip as well.)
+- [uv](https://github.com/astral-sh/uv) (recommended) or [pip](https://pip.pypa.io/en/stable/)
 
-### 2. Installation
+### 2. Quick Setup (Recommended)
+The easiest way to get started is by running the automated installation script. It handles dependencies, generates your `SECRET_KEY`, and runs initial migrations.
+
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd fintracker
 
-# Install dependencies using uv
+# Run the installation script
+# It auto-detects 'uv' if installed, otherwise defaults to 'pip'
+python install.py
+```
+
+> [!TIP]
+> You can force a specific manager using `python install.py --uv` or `python install.py --pip`.
+
+### 3. Manual Installation (Optional)
+
+#### Dependencies
+If using **uv**:
+```bash
 uv sync
 ```
-
-### 3. Environment Configuration
-Create a `.env` file in the root directory and populate it based on the `env_template.txt`:
-```ini
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-DB_NAME=fintracker
-DB_USER=your-db-username
-DB_PASSWORD=your-db-password
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-### 4. Database Setup
+If using **pip**:
 ```bash
-uv run python manage.py migrate
+pip install -r requirements.txt
 ```
+
+#### Environment Configuration
+Create a `.env` file from `env_template.txt`. **Note: `install.py` will generate the `SECRET_KEY` for you.**
+
+#### Database Setup
+```bash
+# Using uv
+uv run python manage.py migrate
+
+# Using pip
+python manage.py migrate
+```
+
 
 ---
 
