@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -91,3 +92,42 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         admin_user.profile.refresh_from_db()
         self.assertEqual(admin_user.profile.role, Profile.Role.ADMIN)
+
+
+class ThrottlingTests(APITestCase):
+    def setUp(self):
+        self.register_url = reverse("users:register")
+
+    @override_settings(
+        REST_FRAMEWORK={
+            "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+            "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+            "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+            "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+            "PAGE_SIZE": 10,
+            "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
+            "DEFAULT_THROTTLE_RATES": {"anon": "2/day"},
+        }
+    )
+    def test_anon_throttle_limit(self):
+        """Verify that anonymous requests are throttled after exceeding the limit."""
+        data = {
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "throttle@example.com",
+            "password": "Password123!",
+        }
+        
+        # 1. First request - OK
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # 2. Second request - OK
+        data["email"] = "throttle2@example.com"
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # 3. Third request - Throttled (429)
+        data["email"] = "throttle3@example.com"
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
