@@ -41,7 +41,7 @@ A robust, secure, and performant backend built with **Django REST Framework (DRF
 ### 1. Prerequisites
 - Python 3.14+
 - PostgreSQL
-- [uv](https://github.com/astral-sh/uv) (recommended package manager), however you can use pip as well.
+- [uv](https://github.com/astral-sh/uv) (recommended package manager, however you can use pip as well.)
 
 ### 2. Installation
 ```bash
