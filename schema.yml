@@ -1,0 +1,881 @@
+openapi: 3.0.3
+info:
+  title: Finance Tracker API
+  version: 1.0.0
+  description: Secure backend for tracking personal and organizational finances with
+    RBAC, Analytics, and Soft Delete support.
+paths:
+  /api/dashboard/categories/:
+    get:
+      operationId: dashboard_categories_retrieve
+      description: GET /api/dashboard/categories/ — total per category.
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/recent/:
+    get:
+      operationId: dashboard_recent_retrieve
+      description: GET /api/dashboard/recent/?limit=5 — most recent transactions.
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/summary/:
+    get:
+      operationId: dashboard_summary_retrieve
+      description: |-
+        GET /api/dashboard/summary/
+
+        Accessible by ALL authenticated roles (ADMIN, ANALYST, VIEWER).
+        Returns a single consolidated payload with all analytics.
+        Calculation logic lives entirely in FinanceAnalytics (services.py).
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/totals/:
+    get:
+      operationId: dashboard_totals_retrieve
+      description: GET /api/dashboard/totals/ — income, expenses, net balance.
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/dashboard/trends/:
+    get:
+      operationId: dashboard_trends_retrieve
+      description: GET /api/dashboard/trends/ — monthly & weekly totals for last 6
+        months.
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/transactions/records/:
+    get:
+      operationId: transactions_records_list
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialRecordList'
+          description: ''
+    post:
+      operationId: transactions_records_create
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+          description: ''
+  /api/transactions/records/{id}/:
+    get:
+      operationId: transactions_records_retrieve
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+          description: ''
+    put:
+      operationId: transactions_records_update
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+          description: ''
+    patch:
+      operationId: transactions_records_partial_update
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialRecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialRecordRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+          description: ''
+    delete:
+      operationId: transactions_records_destroy
+      description: |-
+        CRUD for FinancialRecord with Soft Delete support.
+
+        Permissions:
+          - GET          → ADMIN, ANALYST
+          - POST/PUT/PATCH/DELETE → ADMIN only
+          - POST .../restore/ → ADMIN only
+
+        Filtering:
+          - ?date_after=YYYY-MM-DD  (range start, inclusive)
+          - ?date_before=YYYY-MM-DD (range end, inclusive)
+          - ?category=<value>        (exact)
+          - ?type=INCOME|EXPENSE     (exact)
+          - ?search=<text>           (searches description)
+          - ?include_deleted=true    (ADMIN only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/transactions/records/{id}/restore/:
+    post:
+      operationId: transactions_records_restore_create
+      description: |-
+        POST /api/transactions/records/{id}/restore/
+        Exclusively for ADMINs to bring back a soft-deleted record.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialRecord'
+          description: ''
+  /api/users/{user_id}/assign-role/:
+    patch:
+      operationId: users_assign_role_partial_update
+      description: |-
+        PATCH /api/users/<user_id>/assign-role/
+        ADMIN only. Updates the role of a target user.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignRoleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignRoleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignRoleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignRole'
+          description: ''
+  /api/users/admin/toggle-creation/:
+    post:
+      operationId: users_admin_toggle_creation_create
+      description: |-
+        POST /api/users/admin/toggle-creation/
+        ADMIN only. Accepts {"disable": true/false} to toggle is_admin_creation_enabled.
+        Note: 'disable: true' → is_admin_creation_enabled = False (i.e. creation is OFF).
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisableAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DisableAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DisableAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisableAdmin'
+          description: ''
+  /api/users/create-admin/:
+    post:
+      operationId: users_create_admin_create
+      description: |-
+        POST /api/users/create-admin/
+        Public endpoint. Creates the first (and only) admin user.
+
+        Rules:
+        - Returns 403 if an ADMIN profile already exists.
+        - Returns 403 if SystemSetting.is_admin_creation_enabled is False.
+        - On success, immediately sets is_admin_creation_enabled = False.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateAdminRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateAdminRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAdmin'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: users_me_retrieve
+      description: |-
+        GET /api/users/me/
+        Returns the current authenticated user's profile and role.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/users/register/:
+    post:
+      operationId: users_register_create
+      description: |-
+        POST /api/users/register/
+        Public endpoint. Creates a user with the default VIEWER role.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: ''
+  /api/users/token/:
+    post:
+      operationId: users_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/users/token/blacklist/:
+    post:
+      operationId: users_token_blacklist_create
+      description: |-
+        Takes a token and blacklists it. Must be used with the
+        `rest_framework_simplejwt.token_blacklist` app installed.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklistRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/users/token/refresh/:
+    post:
+      operationId: users_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+components:
+  schemas:
+    AssignRole:
+      type: object
+      description: Serializer to validate a role assignment payload.
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - role
+    CreateAdmin:
+      type: object
+      description: Serializer for first-time admin creation.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+      - email
+      - first_name
+      - last_name
+    CreateAdminRequest:
+      type: object
+      description: Serializer for first-time admin creation.
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+    DisableAdmin:
+      type: object
+      description: Serializer to toggle the is_admin_creation_enabled flag.
+      properties:
+        disable:
+          type: boolean
+          description: Pass true to disable admin creation, false to re-enable it.
+      required:
+      - disable
+    DisableAdminRequest:
+      type: object
+      description: Serializer to toggle the is_admin_creation_enabled flag.
+      properties:
+        disable:
+          type: boolean
+          description: Pass true to disable admin creation, false to re-enable it.
+      required:
+      - disable
+    FinancialRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        category:
+          type: string
+          maxLength: 100
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        created_by:
+          type: string
+          readOnly: true
+      required:
+      - amount
+      - category
+      - created_by
+      - date
+      - id
+      - type
+    FinancialRecordRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        category:
+          type: string
+          minLength: 1
+          maxLength: 100
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+      required:
+      - amount
+      - category
+      - date
+      - type
+    PaginatedFinancialRecordList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancialRecord'
+    PatchedAssignRoleRequest:
+      type: object
+      description: Serializer to validate a role assignment payload.
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+    PatchedFinancialRecordRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        category:
+          type: string
+          minLength: 1
+          maxLength: 100
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+    Register:
+      type: object
+      description: 'Serializer for standard user registration (default role: VIEWER).'
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+      - email
+      - first_name
+      - last_name
+    RegisterRequest:
+      type: object
+      description: 'Serializer for standard user registration (default role: VIEWER).'
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+    RoleEnum:
+      enum:
+      - ADMIN
+      - ANALYST
+      - VIEWER
+      type: string
+      description: |-
+        * `ADMIN` - Admin
+        * `ANALYST` - Analyst
+        * `VIEWER` - Viewer
+    TokenBlacklistRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TypeEnum:
+      enum:
+      - INCOME
+      - EXPENSE
+      type: string
+      description: |-
+        * `INCOME` - Income
+        * `EXPENSE` - Expense
+    UserProfile:
+      type: object
+      description: Read serializer that includes role from the related Profile.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        role:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - role
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

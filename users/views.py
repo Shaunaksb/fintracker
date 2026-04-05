@@ -76,6 +76,7 @@ class DisableAdminView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = DisableAdminSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = DisableAdminSerializer(data=request.data)
@@ -103,6 +104,7 @@ class AssignRoleView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = AssignRoleSerializer
 
     def patch(self, request, user_id, *args, **kwargs):
         try:
@@ -143,6 +145,7 @@ class MeView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
 
     def get(self, request, *args, **kwargs):
         return Response(UserProfileSerializer(request.user).data)
