@@ -11,6 +11,7 @@ def main():
     group.add_argument("--uv", action="store_true", help="Use 'uv' for package management.")
     group.add_argument("--pip", action="store_true", help="Use 'pip' for package management.")
     parser.add_argument("--no-input", action="store_true", help="Skip interactive environment configuration.")
+    parser.add_argument("--stage-two", action="store_true", help=argparse.SUPPRESS) # Internal use only
     args = parser.parse_args()
 
     # Determine which manager to use
@@ -21,28 +22,38 @@ def main():
     else:
         # Auto-detect uv
         if shutil.which("uv"):
-            print("Detected 'uv', using it for installation.")
             manager = "uv"
         else:
-            print("'uv' not found, defaulting to 'pip'.")
             manager = "pip"
 
-    # Install required packages
-    if manager == "uv":
-        print(">>> Installing dependencies using uv...")
-        subprocess.check_call(["uv", "sync"])
-        python_exec = ["uv", "run", "python"]
-    else:
-        print(">>> Installing dependencies using pip...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        python_exec = [sys.executable]
+    # Stage One: Installation and Relaunch
+    if not args.stage_two:
+        if manager == "uv":
+            print(">>> [Stage 1] Installing dependencies using uv...")
+            subprocess.check_call(["uv", "sync"])
+            print(">>> Relaunching script in virtual environment...")
+            relaunch_cmd = ["uv", "run", "python", "install.py", "--stage-two"]
+        else:
+            print(">>> [Stage 1] Installing dependencies using pip...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+            print(">>> Relaunching script...")
+            relaunch_cmd = [sys.executable, "install.py", "--stage-two"]
+
+        # Forward flags
+        if args.uv: relaunch_cmd.append("--uv")
+        if args.pip: relaunch_cmd.append("--pip")
+        if args.no_input: relaunch_cmd.append("--no-input")
+
+        sys.exit(subprocess.call(relaunch_cmd))
+
+    # Stage Two: Configuration and Setup
+    print(">>> [Stage 2] Configuration and Database Setup")
+    python_exec = [sys.executable] # Since we're already in the target environment (via uv run or pip relaunch)
 
     # Generate a secret key for the Django project
-    # Importing here because these packages are installed above
     import dotenv
     dotenv_file = dotenv.find_dotenv()
     if not dotenv_file:
-        # Create .env if it doesn't exist
         with open(".env", "w") as f:
             f.write("")
         dotenv_file = ".env"
@@ -53,6 +64,8 @@ def main():
     scrt = get_random_secret_key()
     dotenv.set_key(dotenv_file, 'SECRET_KEY', scrt)
     print(">>> Generated and saved a new SECRET_KEY to .env")
+
+    super_user_creds = {}
 
     # Interactive setup for other env variables
     if not args.no_input:
@@ -67,7 +80,11 @@ def main():
             ("DB_USER", "your-db-username"),
             ("DB_PASSWORD", "your-db-password"),
             ("DB_HOST", "localhost"),
-            ("DB_PORT", "5432")
+            ("DB_PORT", "5432"),
+            # Superuser credentials
+            ("DJANGO_SUPERUSER_USERNAME", "admin"),
+            ("DJANGO_SUPERUSER_EMAIL", "admin@localhost"),
+            ("DJANGO_SUPERUSER_PASSWORD", "password123"),
         ]
 
         for key, default in env_vars:
@@ -78,6 +95,8 @@ def main():
                 if not val:
                     val = prompt_val
                 dotenv.set_key(dotenv_file, key, val)
+                if key.startswith("DJANGO_SUPERUSER_"):
+                    super_user_creds[key] = val
             except EOFError:
                 break
         print(">>> Environment variables updated.")
@@ -88,15 +107,23 @@ def main():
     subprocess.check_call(python_exec + ["manage.py", "migrate"])
 
     # Create a superuser
-    print(">>> Creating superuser (if not already exists)...")
+    print(">>> Creating superuser...")
     try:
-        subprocess.check_call(python_exec + ["manage.py", "createsuperuser", "--noinput"])
-    except subprocess.CalledProcessError:
-        print("Note: Superuser creation failed or already exists.")
+        # Use credentials from interactive phase or current .env
+        env = os.environ.copy()
+        for key in ["DJANGO_SUPERUSER_USERNAME", "DJANGO_SUPERUSER_EMAIL", "DJANGO_SUPERUSER_PASSWORD"]:
+            val = super_user_creds.get(key) or dotenv.get_key(dotenv_file, key)
+            if val:
+                env[key] = val
+        
+        subprocess.check_call(python_exec + ["manage.py", "createsuperuser", "--noinput"], env=env)
+    except subprocess.CalledProcessError as e:
+        print(f"Note: Superuser creation failed or already exists. Error: {e}")
 
     # Run the server
     print(">>> Starting the development server...")
     subprocess.check_call(python_exec + ["manage.py", "runserver"])
+
 
 if __name__ == "__main__":
     main()
