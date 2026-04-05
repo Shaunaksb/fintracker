@@ -43,6 +43,11 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
         - Admin only: Can pass ?include_deleted=true to see everything.
         """
         user = self.request.user
+        
+        # Guard for drf-spectacular schema generation
+        if getattr(self, "swagger_fake_view", False):
+            return FinancialRecord.objects.all_with_deleted().none()
+
         include_deleted = self.request.query_params.get("include_deleted", "").lower() == "true"
 
         # Check if user is ADMIN to allow include_deleted

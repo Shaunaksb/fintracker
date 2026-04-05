@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,6 +17,10 @@ class DashboardSummaryView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Consolidated financial analytics summary.",
+    )
     def get(self, request, *args, **kwargs):
         data = {
             "totals": FinanceAnalytics.get_totals(),
@@ -31,6 +36,10 @@ class DashboardTotalsView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Total income, expenses, and net balance.",
+    )
     def get(self, request, *args, **kwargs):
         return Response(FinanceAnalytics.get_totals())
 
@@ -40,6 +49,10 @@ class DashboardCategoryView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Total expenditure/income grouped by category.",
+    )
     def get(self, request, *args, **kwargs):
         return Response(FinanceAnalytics.get_category_distribution())
 
@@ -49,6 +62,13 @@ class DashboardRecentView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("limit", type=int, description="Number of items to return (max 50, default 5)"),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+        description="The most recent transactions created in the system.",
+    )
     def get(self, request, *args, **kwargs):
         try:
             limit = int(request.query_params.get("limit", 5))
@@ -64,5 +84,9 @@ class DashboardTrendsView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Financial trends grouped by Week and Month for the last 6 months.",
+    )
     def get(self, request, *args, **kwargs):
         return Response(FinanceAnalytics.get_trends())

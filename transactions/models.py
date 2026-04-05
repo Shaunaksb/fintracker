@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -34,6 +35,10 @@ class FinancialRecordManager(models.Manager):
         """Return only deleted records."""
         return FinancialRecordQuerySet(self.model, using=self._db).deleted()
 
+    def active(self):
+        """Proxy active() to QuerySet."""
+        return self.get_queryset().active()
+
 
 class FinancialRecord(models.Model):
     class RecordType(models.TextChoices):
@@ -43,7 +48,7 @@ class FinancialRecord(models.Model):
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(0.01, message="Amount must be greater than zero.")],
+        validators=[MinValueValidator(Decimal("0.01"), message="Amount must be greater than zero.")],
     )
     type = models.CharField(max_length=7, choices=RecordType.choices)
     category = models.CharField(max_length=100)

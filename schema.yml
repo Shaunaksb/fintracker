@@ -8,64 +8,89 @@ paths:
   /api/dashboard/categories/:
     get:
       operationId: dashboard_categories_retrieve
-      description: GET /api/dashboard/categories/ — total per category.
+      description: Total expenditure/income grouped by category.
       tags:
       - dashboard
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/dashboard/recent/:
     get:
       operationId: dashboard_recent_retrieve
-      description: GET /api/dashboard/recent/?limit=5 — most recent transactions.
+      description: The most recent transactions created in the system.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Number of items to return (max 50, default 5)
       tags:
       - dashboard
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/dashboard/summary/:
     get:
       operationId: dashboard_summary_retrieve
-      description: |-
-        GET /api/dashboard/summary/
-
-        Accessible by ALL authenticated roles (ADMIN, ANALYST, VIEWER).
-        Returns a single consolidated payload with all analytics.
-        Calculation logic lives entirely in FinanceAnalytics (services.py).
+      description: Consolidated financial analytics summary.
       tags:
       - dashboard
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/dashboard/totals/:
     get:
       operationId: dashboard_totals_retrieve
-      description: GET /api/dashboard/totals/ — income, expenses, net balance.
+      description: Total income, expenses, and net balance.
       tags:
       - dashboard
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/dashboard/trends/:
     get:
       operationId: dashboard_trends_retrieve
-      description: GET /api/dashboard/trends/ — monthly & weekly totals for last 6
-        months.
+      description: Financial trends grouped by Week and Month for the last 6 months.
       tags:
       - dashboard
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/transactions/records/:
     get:
       operationId: transactions_records_list
@@ -85,6 +110,20 @@ paths:
           - ?search=<text>           (searches description)
           - ?include_deleted=true    (ADMIN only)
       parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: date_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_before
+        schema:
+          type: string
+          format: date
       - name: page
         required: false
         in: query
@@ -97,6 +136,16 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: type
+        schema:
+          type: string
+          enum:
+          - EXPENSE
+          - INCOME
+        description: |-
+          * `INCOME` - Income
+          * `EXPENSE` - Expense
       tags:
       - transactions
       security:
@@ -170,7 +219,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this financial record.
         required: true
       tags:
       - transactions
@@ -204,7 +254,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this financial record.
         required: true
       tags:
       - transactions
@@ -250,7 +301,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this financial record.
         required: true
       tags:
       - transactions
@@ -295,7 +347,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this financial record.
         required: true
       tags:
       - transactions
@@ -314,7 +367,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this financial record.
         required: true
       tags:
       - transactions
