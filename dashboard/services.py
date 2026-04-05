@@ -1,7 +1,7 @@
 from datetime import date
-from dateutil.relativedelta import relativedelta
 
-from django.db.models import Sum, Count
+from dateutil.relativedelta import relativedelta
+from django.db.models import Q, Sum
 from django.db.models.functions import TruncMonth, TruncWeek
 
 from transactions.models import FinancialRecord
@@ -23,12 +23,12 @@ class FinanceAnalytics:
         result = FinancialRecord.objects.aggregate(
             total_income=Sum(
                 "amount",
-                filter=__import__("django.db.models", fromlist=["Q"]).Q(type=FinancialRecord.RecordType.INCOME),
+                filter=Q(type=FinancialRecord.RecordType.INCOME),
                 default=0,
             ),
             total_expenses=Sum(
                 "amount",
-                filter=__import__("django.db.models", fromlist=["Q"]).Q(type=FinancialRecord.RecordType.EXPENSE),
+                filter=Q(type=FinancialRecord.RecordType.EXPENSE),
                 default=0,
             ),
         )
@@ -72,8 +72,6 @@ class FinanceAnalytics:
         """
         six_months_ago = date.today() - relativedelta(months=6)
         base_qs = FinancialRecord.objects.filter(date__gte=six_months_ago)
-
-        from django.db.models import Q
 
         monthly = list(
             base_qs.annotate(period=TruncMonth("date"))
