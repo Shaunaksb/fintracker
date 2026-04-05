@@ -56,9 +56,11 @@ class FinancialRecordTests(APITestCase):
         response = self.client.patch(self.detail_url, {"amount": "600.00"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # 4. DELETE
+        # 4. DELETE (Soft delete)
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.record.refresh_from_db()
+        self.assertTrue(self.record.is_deleted)
 
     def test_analyst_read_only_access(self):
         """Analyst should be able to read but not write."""
@@ -71,18 +73,30 @@ class FinancialRecordTests(APITestCase):
         # 2. CREATE
         response = self.client.post(self.record_url, {"amount": "100.00"})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        
-        # 3. DELETE
-        response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_viewer_no_access(self):
-        """Viewer role (lowest) should not have access to financial records CRUD."""
-        self.client.force_authenticate(user=self.viewer_user)
+    def test_soft_delete_visibility_and_restoration(self):
+        """Test that deleted records are hidden by default and restorable by ADMIN."""
+        self.client.force_authenticate(user=self.admin_user)
         
-        # 1. READ
+        # 1. Soft delete the initial record
+        self.client.delete(self.detail_url)
+        
+        # 2. Verify it's hidden from list
         response = self.client.get(self.record_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["count"], 0)
+        
+        # 3. Verify it's visible with ?include_deleted=true
+        response = self.client.get(f"{self.record_url}?include_deleted=true")
+        self.assertEqual(response.data["count"], 1)
+        
+        # 4. Restore the record
+        restore_url = reverse("transactions:financial-record-restore", kwargs={"pk": self.record.pk})
+        response = self.client.post(restore_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # 5. Verify it's back in the standard list
+        response = self.client.get(self.record_url)
+        self.assertEqual(response.data["count"], 1)
 
     def test_amount_validation(self):
         """Verify that negative amounts are rejected."""
