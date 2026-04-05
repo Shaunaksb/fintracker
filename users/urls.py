@@ -1,12 +1,19 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 
-from .views import AssignRoleView, CreateAdminView, DisableAdminView, RegisterView
+from .views import (
+    AssignRoleView,
+    CreateAdminView,
+    DisableAdminView,
+    MeView,
+    RegisterView,
+)
 
 app_name = "users"
 
 urlpatterns = [
     # Auth
+    path("me/", MeView.as_view(), name="me"),
     path("register/", RegisterView.as_view(), name="register"),
     path("create-admin/", CreateAdminView.as_view(), name="create-admin"),
     path("token/", TokenObtainPairView.as_view(), name="token-obtain"),

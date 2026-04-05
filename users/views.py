@@ -113,6 +113,13 @@ class AssignRoleView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # Prevent an admin from accidentally removing their own admin role
+        if target_user == request.user:
+            return Response(
+                {"detail": "You cannot change your own role."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = AssignRoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -127,3 +134,15 @@ class AssignRoleView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class MeView(APIView):
+    """
+    GET /api/users/me/
+    Returns the current authenticated user's profile and role.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        return Response(UserProfileSerializer(request.user).data)

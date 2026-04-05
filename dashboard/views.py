@@ -51,7 +51,9 @@ class DashboardRecentView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            limit = max(1, int(request.query_params.get("limit", 5)))
+            limit = int(request.query_params.get("limit", 5))
+            # Clamp limit between 1 and 50
+            limit = max(1, min(50, limit))
         except (TypeError, ValueError):
             limit = 5
         return Response(FinanceAnalytics.get_recent_activity(limit=limit))
