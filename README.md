@@ -57,7 +57,8 @@ python install.py
 ```
 
 > [!TIP]
-> You can force a specific manager using `python install.py --uv` or `python install.py --pip`.
+> The script auto-detects `uv`. You can force a manager using `python install.py --uv` or `python install.py --pip`.
+> Use `python install.py --no-input` to skip interactive environment configuration.
 
 ### 3. Manual Installation (Optional)
 
